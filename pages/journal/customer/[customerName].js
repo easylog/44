@@ -7,21 +7,21 @@ import Link from 'next/link';
 const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
 // Helper function to get clients from localStorage
-const getClientsFromStorage = () => {
-  if (typeof window === 'undefined') return [];
-  const clients = localStorage.getItem('journalClients');
-  return clients ? JSON.parse(clients) : ['Default']; // Start with a default client
+const getCustomersFromStorage = () => {
+  if (typeof window === "undefined") return [];
+  const customers = localStorage.getItem("journalCustomers"); // Neuer Key
+  return customers ? JSON.parse(customers) : ["DefaultCustomer"]; // Default-Kunde
 };
 
 // Helper function to save clients to localStorage
-const saveClientsToStorage = (clients) => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('journalClients', JSON.stringify(clients));
+const saveCustomersToStorage = (customers) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("journalCustomers", JSON.stringify(customers)); // Neuer Key
 };
 
 export default function CustomerJournalPage() {
   const router = useRouter();
-  const { clientName } = router.query; // Get clientName from URL
+  const { customerName } = router.query; // Get clientName from URL
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,8 +31,8 @@ export default function CustomerJournalPage() {
   const [isListening, setIsListening] = useState(false);
   const [recognitionError, setRecognitionError] = useState(null);
   const recognitionRef = useRef(null);
-  const [clients, setClients] = useState(() => getClientsFromStorage());
-
+  const [clients, setClients] = useState(() => getClientsFromStorage()); // Behalten für Sidebar
+  const [customers, setCustomers] = useState(() => getCustomersFromStorage()); // Neu für Kunden
   // Initialize Speech Recognition
   useEffect(() => {
     if (!SpeechRecognition) {
@@ -173,34 +173,39 @@ export default function CustomerJournalPage() {
     }
   };
 
-  const handleAddClient = (newClientName) => {
-    if (newClientName && !clients.includes(newClientName)) {
-      const updatedClients = [...clients, newClientName];
-      setClients(updatedClients);
+  const handleAddCustomer = (newCustomerName) => {
+  if (newCustomerName && !customers.includes(newCustomerName)) {
+    const updatedCustomers = [...customers, newCustomerName];
+    setCustomers(updatedCustomers);
+    saveCustomersToStorage(updatedCustomers);
       saveClientsToStorage(updatedClients);
       // Optionally navigate to the new client's page
       // router.push(`/journal/${newClientName}`);
     }
   };
 
-  const handleDeleteClient = (clientToDelete) => {
-    if (clientToDelete === "Default") {
-      alert("Der Default-Klient kann nicht gelöscht werden.");
-      return;
+  const handleAddCustomer = (newCustomerName) => {
+  if (newCustomerName && !customers.includes(newCustomerName)) {
+    const updatedCustomers = [...customers, newCustomerName];
+    setCustomers(updatedCustomers);
+    saveCustomersToStorage(updatedCustomers);
+  }
+};
+const handleDeleteCustomer = (customerToDelete) => {
+  if (customerToDelete === "DefaultCustomer") { // Sicherstellen, dass Default nicht gelöscht wird
+    alert("Der Default-Kunde kann nicht gelöscht werden.");
+    return;
+  }
+  if (window.confirm(`Möchten Sie den Kunden \"${customerToDelete}\" wirklich löschen? ...`)) {
+    const updatedCustomers = customers.filter(cust => cust !== customerToDelete);
+    setCustomers(updatedCustomers);
+    saveCustomersToStorage(updatedCustomers);
+    localStorage.removeItem(`journalEntries_customer_${customerToDelete}`); // Kunden-Key
+    if (customerName === customerToDelete) {
+      router.push("/journal/customer/DefaultCustomer"); // Zu Default-Kunde umleiten
     }
-
-    if (window.confirm(`Möchten Sie den Klienten "${clientToDelete}" wirklich löschen? Alle zugehörigen Journal-Einträge gehen dabei verloren.`)) {
-      const updatedClients = clients.filter(client => client !== clientToDelete);
-      setClients(updatedClients);
-      saveClientsToStorage(updatedClients);
-      localStorage.removeItem(`journalEntries_${clientToDelete}`);
-
-      // If the current client was deleted, redirect to Default
-      if (clientName === clientToDelete) {
-        router.push("/journal/Default");
-      }
-    }
-  };
+  }
+};
 
   if (!clientName || loading) { // Show loading if clientName isn't available yet or data is loading
     return (
