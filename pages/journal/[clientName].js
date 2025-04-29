@@ -83,8 +83,12 @@ export default function ClientJournalPage() {
       const loadedClients = getClientsFromStorage();
       setClients(loadedClients);
 
-      // If the current clientName is not in the list, maybe redirect or add?
-      // For now, we assume clientName is valid if the page is reached.
+      // If the current clientName is not in the list, redirect to Default
+      if (clientName && !loadedClients.includes(clientName)) {
+        console.warn(`Klient "${clientName}" nicht gefunden, leite zu Default um.`);
+        router.replace('/journal/Default');
+        return; // Prevent further execution for this render
+      }
 
       // Load client-specific entries from localStorage
       const clientEntriesKey = `journalEntries_${clientName}`;
@@ -169,7 +173,6 @@ export default function ClientJournalPage() {
     }
   };
 
-  // --- Client creation logic will go here (Step 023) ---
   const handleAddClient = (newClientName) => {
     if (newClientName && !clients.includes(newClientName)) {
       const updatedClients = [...clients, newClientName];
@@ -177,6 +180,25 @@ export default function ClientJournalPage() {
       saveClientsToStorage(updatedClients);
       // Optionally navigate to the new client's page
       // router.push(`/journal/${newClientName}`);
+    }
+  };
+
+  const handleDeleteClient = (clientToDelete) => {
+    if (clientToDelete === "Default") {
+      alert("Der Default-Klient kann nicht gelöscht werden.");
+      return;
+    }
+
+    if (window.confirm(`Möchten Sie den Klienten "${clientToDelete}" wirklich löschen? Alle zugehörigen Journal-Einträge gehen dabei verloren.`)) {
+      const updatedClients = clients.filter(client => client !== clientToDelete);
+      setClients(updatedClients);
+      saveClientsToStorage(updatedClients);
+      localStorage.removeItem(`journalEntries_${clientToDelete}`);
+
+      // If the current client was deleted, redirect to Default
+      if (clientName === clientToDelete) {
+        router.push("/journal/Default");
+      }
     }
   };
 
@@ -231,14 +253,27 @@ export default function ClientJournalPage() {
             </div>
             <ul className="nav flex-column mb-auto" style={{ overflowY: 'auto' }}>
               {clients.map(client => (
-                <li className="nav-item" key={client}>
+                <li className="nav-item d-flex align-items-center" key={client}>
                   <Link 
                     href={`/journal/${encodeURIComponent(client)}`} 
-                    className={`nav-link sidebar-link px-3 py-2 ${client === clientName ? 'active' : ''}`}
+                    className={`nav-link sidebar-link px-3 py-2 flex-grow-1 ${client === clientName ? 'active' : ''}`}
                   >
                     <i className="bi bi-person me-2"></i>
                     {client}
                   </Link>
+                  {client !== "Default" && (
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); // Prevent link navigation
+                        handleDeleteClient(client); 
+                      }}
+                      className="btn btn-sm btn-danger ms-auto me-2 py-0 px-1 lh-1"
+                      title={`Klient "${client}" löschen`}
+                      style={{ fontSize: '0.7rem' }} // Make button smaller
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -370,4 +405,3 @@ export default function ClientJournalPage() {
     </div>
   );
 }
-
