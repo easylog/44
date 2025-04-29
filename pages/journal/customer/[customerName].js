@@ -10,7 +10,7 @@ const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognit
 const getClientsFromStorage = () => {
   if (typeof window === 'undefined') return [];
   const clients = localStorage.getItem('journalClients');
-  return clients ? JSON.parse(clients) : ['Default']; // Keep for sidebar
+  return clients ? JSON.parse(clients) : ['Default']; // Start with a default client
 };
 
 // Helper function to save clients to localStorage
@@ -19,22 +19,22 @@ const saveClientsToStorage = (clients) => {
   localStorage.setItem('journalClients', JSON.stringify(clients));
 };
 
-// Helper function to get customers from localStorage
+// Helper function to get customers from localStorage (NEW)
 const getCustomersFromStorage = () => {
   if (typeof window === 'undefined') return [];
   const customers = localStorage.getItem('journalCustomers'); // New Key
   return customers ? JSON.parse(customers) : ['DefaultCustomer']; // Default customer
 };
 
-// Helper function to save customers to localStorage
+// Helper function to save customers to localStorage (NEW)
 const saveCustomersToStorage = (customers) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('journalCustomers', JSON.stringify(customers)); // New Key
 };
 
-export default function CustomerJournalPage() { // Renamed component
+export default function ClientJournalPage() { // Component name remains ClientJournalPage
   const router = useRouter();
-  const { customerName } = router.query; // Changed from clientName
+  const { clientName } = router.query; // Use clientName for this page
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,8 +44,8 @@ export default function CustomerJournalPage() { // Renamed component
   const [isListening, setIsListening] = useState(false);
   const [recognitionError, setRecognitionError] = useState(null);
   const recognitionRef = useRef(null);
-  const [clients, setClients] = useState(() => getClientsFromStorage()); // Keep client state for sidebar
-  const [customers, setCustomers] = useState(() => getCustomersFromStorage()); // Add customer state
+  const [clients, setClients] = useState(() => getClientsFromStorage());
+  const [customers, setCustomers] = useState(() => getCustomersFromStorage()); // Add customer state for sidebar
 
   // Initialize Speech Recognition (remains the same)
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function CustomerJournalPage() { // Renamed component
     recognitionRef.current = recognition;
   }, []);
 
-  // Load data, check auth, handle customerName change
+  // Load data, check auth, handle clientName change
   useEffect(() => {
     setLoading(true);
     const storedUser = localStorage.getItem('user');
@@ -88,22 +88,22 @@ export default function CustomerJournalPage() { // Renamed component
     try {
       const userData = JSON.parse(storedUser);
       setUser(userData);
-      const loadedClients = getClientsFromStorage(); // Load clients for sidebar
+      const loadedClients = getClientsFromStorage(); // Load clients
       setClients(loadedClients);
-      const loadedCustomers = getCustomersFromStorage(); // Load customers
+      const loadedCustomers = getCustomersFromStorage(); // Load customers for sidebar
       setCustomers(loadedCustomers);
 
-      // If the current customerName is not in the list, redirect to DefaultCustomer
-      if (customerName && !loadedCustomers.includes(customerName)) {
-        console.warn(`Kunde "${customerName}" nicht gefunden, leite zu DefaultCustomer um.`);
-        router.replace('/journal/customer/DefaultCustomer');
+      // If the current clientName is not in the list, redirect to Default
+      if (clientName && !loadedClients.includes(clientName)) {
+        console.warn(`Klient "${clientName}" nicht gefunden, leite zu Default um.`);
+        router.replace('/journal/Default');
         return; // Prevent further execution for this render
       }
 
-      // Load customer-specific entries from localStorage
-      const customerEntriesKey = `journalEntries_customer_${customerName}`; // Customer-specific key
-      const customerEntries = localStorage.getItem(customerEntriesKey);
-      setJournalEntries(customerEntries ? JSON.parse(customerEntries) : []);
+      // Load client-specific entries from localStorage
+      const clientEntriesKey = `journalEntries_${clientName}`; // Client-specific key
+      const clientEntries = localStorage.getItem(clientEntriesKey);
+      setJournalEntries(clientEntries ? JSON.parse(clientEntries) : []);
 
       setTimeout(() => {
         setLoading(false);
@@ -116,7 +116,7 @@ export default function CustomerJournalPage() { // Renamed component
       router.push('/auth/login');
     }
 
-  }, [router, customerName]); // Re-run when customerName changes
+  }, [router, clientName]); // Re-run when clientName changes
 
   // Logout handler (remains the same)
   const handleLogout = () => {
@@ -125,7 +125,7 @@ export default function CustomerJournalPage() { // Renamed component
     router.push('/auth/login');
   };
 
-  // New entry change handler (remains the same, uses customerName implicitly via state)
+  // New entry change handler (remains the same, uses clientName implicitly via state)
   const handleNewEntryChange = (e) => {
     setNewEntry(e.target.value);
     // Mock GPT suggestions (can be removed or kept)
@@ -144,10 +144,10 @@ export default function CustomerJournalPage() { // Renamed component
     }
   };
 
-  // Submit handler (adapted for customer)
+  // Submit handler (adapted for client)
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!newEntry.trim() || !customerName) return;
+    if (!newEntry.trim() || !clientName) return;
 
     const newJournalEntry = {
       id: Date.now(),
@@ -156,11 +156,11 @@ export default function CustomerJournalPage() { // Renamed component
       content: newEntry
     };
 
-    // Save customer-specific entries to localStorage
-    const customerEntriesKey = `journalEntries_customer_${customerName}`; // Customer-specific key
+    // Save client-specific entries to localStorage
+    const clientEntriesKey = `journalEntries_${clientName}`; // Client-specific key
     const updatedEntries = [newJournalEntry, ...journalEntries];
     setJournalEntries(updatedEntries);
-    localStorage.setItem(customerEntriesKey, JSON.stringify(updatedEntries));
+    localStorage.setItem(clientEntriesKey, JSON.stringify(updatedEntries));
 
     setNewEntry('');
     setGptSuggestion('');
@@ -184,7 +184,7 @@ export default function CustomerJournalPage() { // Renamed component
     }
   };
 
-  // --- Client Handlers (Keep for Sidebar) ---
+  // --- Client Handlers ---
   const handleAddClient = (newClientName) => {
     if (newClientName && !clients.includes(newClientName)) {
       const updatedClients = [...clients, newClientName];
@@ -198,16 +198,20 @@ export default function CustomerJournalPage() { // Renamed component
       alert("Der Default-Klient kann nicht gelöscht werden.");
       return;
     }
-    if (window.confirm(`Möchten Sie den Klienten "${clientToDelete}" wirklich löschen? ...`)) {
+    if (window.confirm(`Möchten Sie den Klienten "${clientToDelete}" wirklich löschen? Alle zugehörigen Journal-Einträge gehen dabei verloren.`)) {
       const updatedClients = clients.filter(client => client !== clientToDelete);
       setClients(updatedClients);
       saveClientsToStorage(updatedClients);
       localStorage.removeItem(`journalEntries_${clientToDelete}`);
-      // No redirect needed here as we are on the customer page
+
+      // If the current client was deleted, redirect to Default
+      if (clientName === clientToDelete) {
+        router.push("/journal/Default");
+      }
     }
   };
 
-  // --- Customer Handlers (NEW) ---
+  // --- Customer Handlers (NEW - needed for sidebar functionality) ---
   const handleAddCustomer = (newCustomerName) => {
     if (newCustomerName && !customers.includes(newCustomerName)) {
       const updatedCustomers = [...customers, newCustomerName];
@@ -221,21 +225,17 @@ export default function CustomerJournalPage() { // Renamed component
       alert("Der Default-Kunde kann nicht gelöscht werden.");
       return;
     }
-    if (window.confirm(`Möchten Sie den Kunden "${customerToDelete}" wirklich löschen? Alle zugehörigen Journal-Einträge gehen dabei verloren.`)) {
+    if (window.confirm(`Möchten Sie den Kunden "${customerToDelete}" wirklich löschen? ...`)) {
       const updatedCustomers = customers.filter(cust => cust !== customerToDelete);
       setCustomers(updatedCustomers);
       saveCustomersToStorage(updatedCustomers);
-      localStorage.removeItem(`journalEntries_customer_${customerToDelete}`); // Customer-specific key
-
-      // If the current customer was deleted, redirect to DefaultCustomer
-      if (customerName === customerToDelete) {
-        router.push("/journal/customer/DefaultCustomer");
-      }
+      localStorage.removeItem(`journalEntries_customer_${customerToDelete}`);
+      // No redirect needed here as we are on the client page
     }
   };
 
-  // Loading state check (remains the same, checks customerName)
-  if (!customerName || loading) {
+  // Loading state check (remains the same, checks clientName)
+  if (!clientName || loading) {
     return (
       <div className="container d-flex justify-content-center align-items-center min-vh-100">
         <div className="spinner-border text-primary" role="status">
@@ -249,8 +249,8 @@ export default function CustomerJournalPage() { // Renamed component
   return (
     <div className="container-fluid">
       <Head>
-        <title>Journal: {customerName} | EasyLog</title> {/* Changed title */} 
-        <meta name="description" content={`Journal für Kunde ${customerName} | EasyLog`} /> {/* Changed description */} 
+        <title>Journal: {clientName} | EasyLog</title> {/* Title uses clientName */}
+        <meta name="description" content={`Journal für Klient ${clientName} | EasyLog`} /> {/* Description uses clientName */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" />
       </Head>
 
@@ -264,10 +264,10 @@ export default function CustomerJournalPage() { // Renamed component
             </div>
             <hr className="text-white" />
             
-            {/* Client Section (for navigation)  */}
+            {/* Client Section */}
             <div className="px-3 text-white mb-2">
               <h6>Klienten</h6>
-              <form onSubmit={(e) => { 
+              <form onSubmit={(e)  => { 
                   e.preventDefault(); 
                   const newClientInput = e.target.elements.newClient;
                   const newClientName = newClientInput.value.trim();
@@ -289,7 +289,7 @@ export default function CustomerJournalPage() { // Renamed component
                 <li className="nav-item d-flex align-items-center" key={client}>
                   <Link 
                     href={`/journal/${encodeURIComponent(client)}`} 
-                    className={`nav-link sidebar-link px-3 py-2 flex-grow-1`}
+                    className={`nav-link sidebar-link px-3 py-2 flex-grow-1 ${client === clientName ? 'active' : ''}`} // Check active state for client
                   >
                     <i className="bi bi-person me-2"></i>
                     {client}
@@ -313,7 +313,7 @@ export default function CustomerJournalPage() { // Renamed component
             
             <hr className="text-white" />
 
-            {/* Customer Section (NEW) */}
+            {/* Customer Section (NEW - Added to this file) */}
             <div className="px-3 text-white mb-2">
               <h6>Kunden</h6>
               <form onSubmit={(e) => { 
@@ -338,7 +338,7 @@ export default function CustomerJournalPage() { // Renamed component
                 <li className="nav-item d-flex align-items-center" key={customer}>
                   <Link 
                     href={`/journal/customer/${encodeURIComponent(customer)}`} 
-                    className={`nav-link sidebar-link px-3 py-2 flex-grow-1 ${customer === customerName ? 'active' : ''}`} // Check active state for customer
+                    className={`nav-link sidebar-link px-3 py-2 flex-grow-1`} // No active state check here
                   >
                     <i className="bi bi-building me-2"></i> {/* Changed Icon */} 
                     {customer}
@@ -387,18 +387,18 @@ export default function CustomerJournalPage() { // Renamed component
           </div>
         </div>
 
-        {/* Hauptinhalt (adapted for customer) */}
+        {/* Hauptinhalt (uses clientName) */}
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
           <div className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-            <h1 className="h2">Journal für Kunde: {customerName}</h1> {/* Changed text */} 
+            <h1 className="h2">Journal für Klient: {clientName}</h1> {/* Uses clientName */}
           </div>
 
-          {/* Neuer Journal-Eintrag (adapted for customer) */}
+          {/* Neuer Journal-Eintrag (uses clientName) */}
           <div className="row mb-4">
             <div className="col-12">
               <div className="card border-0 shadow-sm">
                 <div className="card-header bg-white">
-                  <h5 className="card-title mb-0">Neuer Eintrag für Kunde {customerName}</h5> {/* Changed text */} 
+                  <h5 className="card-title mb-0">Neuer Eintrag für Klient {clientName}</h5> {/* Uses clientName */}
                 </div>
                 <div className="card-body">
                   <form onSubmit={handleSubmit}>
@@ -406,7 +406,7 @@ export default function CustomerJournalPage() { // Renamed component
                       <textarea 
                         className="form-control" 
                         rows="4" 
-                        placeholder={`Aktivitäten für Kunde ${customerName} beschreiben... (oder Spracheingabe nutzen)`} // Changed placeholder
+                        placeholder={`Aktivitäten für Klient ${clientName} beschreiben... (oder Spracheingabe nutzen)`} // Uses clientName
                         value={newEntry}
                         onChange={handleNewEntryChange}
                         required
@@ -452,16 +452,16 @@ export default function CustomerJournalPage() { // Renamed component
             </div>
           </div>
 
-          {/* Journal-Einträge (adapted for customer) */}
+          {/* Journal-Einträge (uses clientName) */}
           <div className="row">
             <div className="col-12 mb-4">
               <div className="card border-0 shadow-sm">
                 <div className="card-header bg-white d-flex justify-content-between align-items-center">
-                  <h5 className="card-title mb-0">Einträge für Kunde {customerName}</h5> {/* Changed text */} 
+                  <h5 className="card-title mb-0">Einträge für Klient {clientName}</h5> {/* Uses clientName */}
                 </div>
                 <div className="card-body">
                   {journalEntries.length === 0 ? (
-                    <p className="text-center text-muted my-5">Keine Journal-Einträge für Kunde {customerName} vorhanden.</p> // Changed text
+                    <p className="text-center text-muted my-5">Keine Journal-Einträge für Klient {clientName} vorhanden.</p> // Uses clientName
                   ) : (
                     journalEntries.map(entry => (
                       <div key={entry.id} className="journal-entry mb-4 pb-3 border-bottom">
