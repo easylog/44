@@ -7,10 +7,10 @@ import Link from 'next/link';
 const SpeechRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
 
 // Helper function to get clients from localStorage
-const getCustomersFromStorage = () => {
+const getClientsFromStorage = () => {
   if (typeof window === 'undefined') return [];
-  const customers = localStorage.getItem('journalCustomers'); // <-- Prüfen Sie diesen Schlüssel!
-  return customers ? JSON.parse(customers) : ['DefaultCustomer'];
+  const clients = localStorage.getItem('journalClients');
+  return clients ? JSON.parse(clients) : ['Default']; // Start with a default client
 };
 
 // Helper function to save clients to localStorage
