@@ -19,7 +19,7 @@ const saveClientsToStorage = (clients) => {
   localStorage.setItem('journalClients', JSON.stringify(clients));
 };
 
-export default function ClientJournalPage() {
+export default function CustomerJournalPage() {
   const router = useRouter();
   const { clientName } = router.query; // Get clientName from URL
 
