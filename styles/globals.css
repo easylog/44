@@ -1,0 +1,59 @@
+/* Global styles */
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Custom EasyLog styles */
+.sidebar {
+  min-height: 100vh;
+  background-color: #212529;
+}
+
+.sidebar-link {
+  color: #f8f9fa;
+  transition: all 0.3s;
+}
+
+.sidebar-link:hover {
+  background-color: #343a40;
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
+.card-dashboard {
+  transition: all 0.3s;
+}
+
+.card-dashboard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.journal-entry {
+  border-left: 4px solid #0d6efd;
+  padding-left: 15px;
+  margin-bottom: 20px;
+}
+
+.changeboard-item {
+  border-left: 4px solid #198754;
+  padding-left: 15px;
+  margin-bottom: 15px;
+}
